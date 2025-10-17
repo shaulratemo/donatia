@@ -9,7 +9,7 @@ class Donation(models.Model):
     Represents a donation made by a donor to a cause.
     """
     PAYMENT_METHOD_CHOICES = [
-        ('MPESA', 'M-PESA'),
+        ('MPESA', 'M-Pesa'),
         ('CARD', 'Card'),
         ('BANK', 'Bank Transfer'),
         ('OTHER', 'Other'),

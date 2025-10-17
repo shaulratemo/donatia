@@ -10,10 +10,10 @@ class Organization(models.Model):
     ]
 
     # The user who owns/registered this organization
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='organizations'
+        related_name='organization'
     )
 
     name = models.CharField(max_length=255)

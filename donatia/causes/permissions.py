@@ -1,53 +1,45 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+
 class IsOrgOwnerOrAdmin(BasePermission):
     """
-    Object-level permission to only allow organization owner or admin
-    to edit a cause. Read-only is allowed for any request.
+    Allows only organization owners or admins to edit a cause.
+    Read-only is open to everyone.
     """
 
     def has_object_permission(self, request, view, obj):
-        # Allow read-only requests for everyone
+        # Everyone can read
         if request.method in SAFE_METHODS:
             return True
 
-        # Admins have full access
+        # Admins can edit
         if request.user and request.user.is_staff:
             return True
 
-        # obj is a Cause instance; check ownership
-        return hasattr(request.user, 'id') and obj.organization.user == request.user
+        # Organization owner check
+        return hasattr(request.user, 'organization') and obj.organization.user == request.user
 
 
 class IsOrgUserForCreate(BasePermission):
     """
-    Permission for creating a Cause:
-    - Anyone can GET.
-    - To POST, the user must be authenticated AND must be the owner of the organization
-      specified in the request data (or a staff user).
+    Allows organization users (with approved organizations) or admins to create causes.
     """
+
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
 
-        # Must be authenticated to create
-        if not (request.user and request.user.is_authenticated):
+        user = request.user
+        if not user.is_authenticated:
             return False
 
-        # staff allowed
-        if request.user.is_staff:
+        # Admins can create
+        if user.is_staff:
             return True
 
-        # For POST, expect organization_id in payload
-        org_id = request.data.get('organization_id')
-        if not org_id:
-            return False
-
-        from organizations.models import Organization
+        # Ensure user has an approved organization
         try:
-            org = Organization.objects.get(pk=org_id)
-        except Organization.DoesNotExist:
+            org = user.organization
+            return org.status == 'approved'
+        except AttributeError:
             return False
-
-        # The requesting user must be the owner of the organization
-        return org.user == request.user
